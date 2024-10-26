@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SubscriptionType {
+  FREE
+  BASIC
+  PRO
+}
+
+model User {
+  id               String           @id @default(uuid())
+  name             String?
+  email            String           @unique
+  passwordHash     String?          @map("password_hash")
+  avatarUrl        String?          @map("avatar_url")
+  birthday         DateTime?
+  subscription     SubscriptionType @default(FREE)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  preferredGateway GatewayProvider?
+
+  tokens             Token[]
+  accounts           Account[]
+  invites            Invite[]
+  member_on          Member[]
+  owns_organizations Organization[]
+  subscriptions      Subscription[]
+
+  @@map("users")
+}
+
+enum TokenType {
+  PASSWORD_RECOVER
+}
+
+model Token {
+  id        String    @id @default(uuid())
+  type      TokenType
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map("user_id")
+
+  @@map("tokens")
+}
+
+enum AccountProvider {
+  GITHUB
+}
+
+model Account {
+  id                String          @id @default(uuid())
+  provider          AccountProvider
+  providerAccountId String          @unique @map("provider_account_id")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map("user_id")
+
+  @@unique([provider, userId])
+  @@map("accounts")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+  BILLING
+}
+
+model Invite {
+  id        String   @id @default(uuid())
+  email     String
+  role      Role
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId String? @map("author_id")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id")
+
+  @@unique([email, organizationId])
+  @@index([email])
+  @@map("invites")
+}
+
+model Member {
+  id   String @id @default(uuid())
+  role Role   @default(MEMBER)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  @@unique([organizationId, userId])
+  @@map("members")
+}
+
+model Organization {
+  id                        String   @id @default(uuid())
+  name                      String
+  slug                      String   @unique
+  domain                    String?  @unique
+  shouldAttachUsersByDomain Boolean  @default(false) @map("should_attach_users_by_domain")
+  avatarUrl                 String?  @map("avatar_url")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  owner   User   @relation(fields: [ownerId], references: [id])
+  ownerId String @map("owner_id")
+
+  invites             Invite[]
+  members             Member[]
+  plans               Plan[]
+  paymentGateways     PaymentGateway[]
+  gatewayTransactions GatewayTransaction[]
+
+  @@map("organizations")
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  price       Float
+  duration    Int
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  subscriptions  Subscription[]
+  Organization   Organization?  @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  @@map("plans")
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  userId           String             @map("user_id")
+  planId           String             @map("plan_id")
+  startDate        DateTime           @map("start_date")
+  endDate          DateTime           @map("end_date")
+  status           SubscriptionStatus @default(ACTIVE)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  trialEndsAt      DateTime?          @map("trial_ends_at")
+  gatewayProvider  GatewayProvider
+  gatewayReference String?            @map("gateway_reference")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  subscriptionId String        @map("subscription_id")
+  amount         Float
+  currency       String
+  status         PaymentStatus @default(PENDING)
+  paymentGateway String
+  transactionId  String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum GatewayProvider {
+  STRIPE
+  PAGARME
+  MERCADO_PAGO
+}
+
+model PaymentGateway {
+  id            String          @id @default(cuid())
+  provider      GatewayProvider
+  apiKey        String
+  secretKey     String
+  webhookSecret String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id")
+
+  gatewayTransactions GatewayTransaction[]
+
+  @@map("payment_gateways")
+}
+
+model GatewayTransaction {
+  id               String          @id @default(cuid())
+  amount           Float
+  currency         String
+  status           PaymentStatus
+  gatewayProvider  GatewayProvider
+  gatewayReference String?         @map("gateway_reference")
+  pixCode          String?         @map("pix_code")
+  qrCodeUrl        String?         @map("qr_code_url")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  paymentGateway   PaymentGateway @relation(fields: [paymentGatewayId], references: [id])
+  paymentGatewayId String         @map("payment_gateway_id")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String       @map("organization_id")
+
+  @@map("gateway_transactions")
+}

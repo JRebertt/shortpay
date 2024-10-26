@@ -1,0 +1,26 @@
+{
+  "name": "@shortpay/utils",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@shortpay/eslint-config": "workspace:*",
+    "@shortpay/prettier": "workspace:*",
+    "@shortpay/tsconfig": "workspace:*",
+    "@types/bcryptjs": "^2.4.6"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@shortpay/eslint-config/lib"
+    ]
+  },
+  "prettier": "@shortpay/prettier"
+}
