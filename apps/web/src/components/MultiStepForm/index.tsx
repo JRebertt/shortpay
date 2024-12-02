@@ -85,7 +85,7 @@ export default function MultiStepForm() {
   }
 
   return (
-    <div className="mx-auto mt-10 max-w-2xl rounded-lg bg-white p-6 shadow-lg">
+    <div className="mx-auto mt-10 max-w-2xl rounded-lg p-6 shadow-lg">
       <ProgressBar steps={steps} currentStep={currentStep} />
       <h2 className="mb-2 text-2xl font-bold">{steps[currentStep].title}</h2>
       <p className="mb-6 text-gray-600">{steps[currentStep].description}</p>

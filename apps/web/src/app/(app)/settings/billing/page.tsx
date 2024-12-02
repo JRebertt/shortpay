@@ -66,7 +66,9 @@ export default async function EnhancedBilling() {
                         currency: 'BRL',
                       })}
                       {' / '}
-                      {billing.subscription.plan.duration} dias
+                      {
+                        billing.subscription.plan.duration
+                      } dias
                     </TableCell>
                   </TableRow>
                   <TableRow>

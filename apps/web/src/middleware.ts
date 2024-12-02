@@ -33,21 +33,23 @@ export async function middleware(request: NextRequest) {
       orgSlug = cookieValue || null
     }
 
-    if (orgSlug) {
-      response.cookies.set('org', orgSlug, {
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 30 * 24 * 60 * 60, // 30d
-      })
+    // Se o slug ainda for nulo, redirecionamos para a página inicial
+    if (!orgSlug) {
+      return NextResponse.redirect(new URL('/', request.url))
     }
+
+    // Se o slug foi encontrado, armazenamos no cookie
+    response.cookies.set('org', orgSlug, {
+      path: '/',
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 30 * 24 * 60 * 60, // 30 dias
+    })
   }
 
   // Verifica o status da assinatura do usuário
   try {
     const { user } = await getProfile()
-
-    // console.log(user, 'aqui')
 
     // Verifica se o usuário está tentando acessar uma rota paga
     if (paidRoutes.some((route) => pathname.startsWith(route))) {

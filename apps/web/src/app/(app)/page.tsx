@@ -1,29 +1,34 @@
-// import { unstable_noStore as noCache } from 'next/cache'
-
 import { redirect } from 'next/navigation'
 
 import { getCurrentOrg } from '@/auth/auth'
 import { Header } from '@/components/header'
-import { OrganizationSwitcher } from '@/components/organization-switcher'
-import MultiStepForm from '@/components/MultiStepForm'
-export default async function Home() {
-  // noCache()
+import { getOrganizations } from '@/http/get-organizations'
 
+import { OrganizationalStructureGrid } from './card-list'
+
+export default async function Home() {
   const org = getCurrentOrg()
+  const getOrgs = await getOrganizations()
+  const hasOrganizations = getOrgs.organizations.length > 0
+
+  if (org && hasOrganizations) {
+    redirect(`/org/${org}`)
+  }
 
   return (
     <>
       <Header />
       <div className="space-y-4 py-4">
         <main className="mx-auto w-full max-w-[1200px] space-y-4">
-          {org ? (
-            redirect(`/org/${org}`)
-          ) : (
+          {hasOrganizations ? (
             <>
-              <h2>Por Favor Selecione uma Organização</h2>
-              <OrganizationSwitcher />
-              <MultiStepForm/>
+              <OrganizationalStructureGrid
+                organizations={getOrgs.organizations}
+              />
+              {/* <Component /> */}
             </>
+          ) : (
+            redirect('/create-organization-v2')
           )}
         </main>
       </div>

@@ -11,6 +11,7 @@ export const env = createEnv({
     GITHUB_OAUTH_CLIENT_ID: z.string(),
     GITHUB_OAUTH_CLIENT_SECRET: z.string(),
     GITHUB_OAUTH_CLIENT_REDIRECT_URI: z.string().url(),
+    AES_ENCRYPTION_KEY: z.string(),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -33,6 +34,7 @@ export const env = createEnv({
     NEXT_PUBLIC_VERCEL_URL: process.env.VERCEL_URL,
     GITHUB_OAUTH_CLIENT_ID: process.env.GITHUB_OAUTH_CLIENT_ID,
     GITHUB_OAUTH_CLIENT_SECRET: process.env.GITHUB_OAUTH_CLIENT_SECRET,
+    AES_ENCRYPTION_KEY: process.env.AES_ENCRYPTION_KEY,
     GITHUB_OAUTH_CLIENT_REDIRECT_URI:
       process.env.GITHUB_OAUTH_CLIENT_REDIRECT_URI,
     VERCEL_ENV: process.env.VERCEL_ENV,

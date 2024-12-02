@@ -19,11 +19,9 @@ const organizationSchema = z
       .refine(
         (value) => {
           if (value) {
-            const domainRegex = /^[a-zA-Z0-9.-]+.[a-zA-Z]{2,}$/
-
+            const domainRegex = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
             return domainRegex.test(value)
           }
-
           return true
         },
         {
@@ -31,16 +29,15 @@ const organizationSchema = z
         },
       ),
     shouldAttachUsersByDomain: z
-      .union([z.literal('on'), z.literal('off'), z.boolean()])
+      .union([z.literal('on'), z.literal(''), z.boolean()])
       .transform((value) => value === true || value === 'on')
       .default(false),
   })
   .refine(
     (data) => {
-      if (data.shouldAttachUsersByDomain === true && !data.domain) {
+      if (data.shouldAttachUsersByDomain && !data.domain) {
         return false
       }
-
       return true
     },
     {
@@ -53,6 +50,7 @@ const organizationSchema = z
 export type OrganizationSchema = z.infer<typeof organizationSchema>
 
 export async function createOrganizationAction(data: FormData) {
+  console.log(Object.fromEntries(data))
   const result = organizationSchema.safeParse(Object.fromEntries(data))
 
   if (!result.success) {

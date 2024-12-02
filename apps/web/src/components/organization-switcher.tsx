@@ -70,7 +70,7 @@ export async function OrganizationSwitcher() {
       <DropdownMenuContent
         align="end"
         alignOffset={-16}
-        sideOffset={12}
+        sideOffset={22}
         className="w-[200px]"
       >
         <DropdownMenuGroup>
@@ -119,10 +119,29 @@ export async function OrganizationSwitcher() {
           })}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild disabled={isFree && isAdminInAnyOrg}>
-          <Link href="/create-organization">
+        <DropdownMenuItem
+          asChild
+          disabled={(isFree && isAdminInAnyOrg) || organizations.length > 0}
+        >
+          <Link href="/create-organization" className="flex items-center">
             <PlusCircle className="mr-2 size-4" />
             Criar nova
+            {((isFree && isAdminInAnyOrg) || organizations.length > 0) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="ml-2 h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {organizations.length > 0
+                        ? 'Você já possui uma organização'
+                        : 'Faça upgrade para criar uma nova organização'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

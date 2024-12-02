@@ -10,8 +10,11 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
+import { ThemeSelect } from './theme-select'
 
 function getInitials(name: string): string {
   const initials = name
@@ -25,20 +28,21 @@ function getInitials(name: string): string {
 
 function getSubscriptionBadgeProps(subscription: string): {
   label: string
+  variant?: 'default' | 'secondary'
 } {
   switch (subscription.toLowerCase()) {
     case 'pro':
-      return { label: 'PRO' }
+      return { label: 'PRO', variant: 'secondary' }
     case 'basic':
-      return { label: 'BASIC' }
+      return { label: 'BASIC', variant: 'secondary' }
     default:
-      return { label: 'FREE' }
+      return { label: 'FREE', variant: 'secondary' }
   }
 }
 
 export async function ProfileButton() {
   const { user } = await auth()
-  const { label } = getSubscriptionBadgeProps(user.subscription)
+  const { label, variant } = getSubscriptionBadgeProps(user.subscription)
 
   return (
     <DropdownMenu>
@@ -49,37 +53,47 @@ export async function ProfileButton() {
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           )}
         </Avatar>
-        <div className="flex flex-col items-start">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{user.name}</span>
-            <Badge variant="default" className={`px-1 py-0 text-[10px] `}>
-              {label}
-            </Badge>
-          </div>
-          <span className="text-xs text-muted-foreground">{user.email}</span>
-        </div>
         <ChevronDown className="size-4 text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel className="p-4 font-normal">
+          <div className="flex flex-col space-y-1">
+            <div className="flex items-center">
+              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <Badge variant={variant} className="ml-2 text-xs">
+                {label}
+              </Badge>
+            </div>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {/* <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild>
             <ThemeSelect />
-          </DropdownMenuItem> */}
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/settings/profile">
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/settings/profile"
+              className="flex cursor-pointer items-center"
+            >
               <Cog className="mr-2 size-4" />
-              Ajustes
+              <span>Ajustes</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuGroup>
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <a href="/api/auth/sign-out">
-              <LogOut className="mr-2 size-4" />
-              Sair
-            </a>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <a
+            href="/api/auth/sign-out"
+            className="flex cursor-pointer items-center text-red-500 hover:text-red-600"
+          >
+            <LogOut className="mr-2 size-4" />
+            <span>Sair</span>
+          </a>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
