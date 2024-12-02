@@ -5,7 +5,9 @@
     "dev": "pnpm env:load tsx watch src/http/server.ts",
     "db:migrate": "pnpm env:load prisma migrate dev",
     "db:studio": "pnpm env:load prisma studio",
-    "db:seed": "pnpm env:load tsx prisma/seed.ts",
+    "db:seed:main": "pnpm env:load tsx prisma/seed.ts",
+    "db:seed:integrations": "pnpm env:load tsx prisma/seed-integrations.ts",
+    "db:seed:all": "pnpm env:load tsx prisma/seed.ts && pnpm env:load tsx prisma/seed-integrations.ts",
     "start": "pnpm env:load node dist/http/server.js",
     "build": "tsup",
     "env:load": "dotenv -e ../../.env --"
@@ -16,9 +18,11 @@
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
     "@prisma/client": "5.13.0",
-    "@shortpay/env": "workspace:*",
     "@shortpay/auth": "workspace:*",
+    "@shortpay/env": "workspace:*",
+    "@shortpay/gateways": "workspace:*",
     "@shortpay/utils": "workspace:*",
+    "axios": "^1.7.7",
     "date-fns": "^4.1.0",
     "fastify": "^4.26.2",
     "fastify-plugin": "^4.5.1",
@@ -33,14 +37,14 @@
     "@shortpay/prettier": "workspace:*",
     "@shortpay/tsconfig": "workspace:*",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20.12.7",
+    "@types/node": "^20.17.6",
     "dotenv-cli": "^7.4.2",
     "prisma": "^5.21.1",
     "tsup": "^8.3.0",
     "tsx": "^4.7.3"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "pnpm db:seed:all"
   },
   "prettier": "@shortpay/prettier",
   "eslintConfig": {

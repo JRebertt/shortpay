@@ -5,5 +5,10 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
-  noExternal: ['@shortpay/auth', '@shortpay/env'],
+  noExternal: [
+    '@shortpay/auth',
+    '@shortpay/env',
+    '@shortpay/gateways',
+    '@shortpay/utils',
+  ],
 })

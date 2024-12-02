@@ -13,6 +13,27 @@ enum SubscriptionType {
   PRO
 }
 
+enum TokenType {
+  PASSWORD_RECOVER
+}
+
+enum AccountProvider {
+  GITHUB
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+  BILLING
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
 model User {
   id               String           @id @default(uuid())
   name             String?
@@ -23,7 +44,7 @@ model User {
   subscription     SubscriptionType @default(FREE)
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
-  preferredGateway GatewayProvider?
+  preferredGateway String?
 
   tokens             Token[]
   accounts           Account[]
@@ -33,10 +54,6 @@ model User {
   subscriptions      Subscription[]
 
   @@map("users")
-}
-
-enum TokenType {
-  PASSWORD_RECOVER
 }
 
 model Token {
@@ -50,10 +67,6 @@ model Token {
   @@map("tokens")
 }
 
-enum AccountProvider {
-  GITHUB
-}
-
 model Account {
   id                String          @id @default(uuid())
   provider          AccountProvider
@@ -64,12 +77,6 @@ model Account {
 
   @@unique([provider, userId])
   @@map("accounts")
-}
-
-enum Role {
-  ADMIN
-  MEMBER
-  BILLING
 }
 
 model Invite {
@@ -119,8 +126,11 @@ model Organization {
   invites             Invite[]
   members             Member[]
   plans               Plan[]
-  paymentGateways     PaymentGateway[]
+  integrations        Integration[]
   gatewayTransactions GatewayTransaction[]
+  products            Product[]
+
+  Widget Widget[]
 
   @@map("organizations")
 }
@@ -151,7 +161,7 @@ model Subscription {
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
   trialEndsAt      DateTime?          @map("trial_ends_at")
-  gatewayProvider  GatewayProvider
+  gatewayProvider  String
   gatewayReference String?            @map("gateway_reference")
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -161,26 +171,27 @@ model Subscription {
   @@map("subscriptions")
 }
 
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELLED
-  EXPIRED
-  PENDING
-}
-
 model Payment {
   id             String        @id @default(cuid())
   subscriptionId String        @map("subscription_id")
   amount         Float
   currency       String
   status         PaymentStatus @default(PENDING)
-  paymentGateway String
+  integrationId  String        @map("integration_id")
   transactionId  String?
   createdAt      DateTime      @default(now()) @map("created_at")
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  integration  Integration  @relation(fields: [integrationId], references: [id])
 
   @@map("payments")
+}
+
+// App
+
+enum IntegrationStatus {
+  connected
+  disconnected
 }
 
 enum PaymentStatus {
@@ -189,47 +200,105 @@ enum PaymentStatus {
   FAILED
 }
 
-enum GatewayProvider {
-  STRIPE
-  PAGARME
-  MERCADO_PAGO
-}
-
-model PaymentGateway {
-  id            String          @id @default(cuid())
-  provider      GatewayProvider
-  apiKey        String
-  secretKey     String
-  webhookSecret String?
-  isActive      Boolean         @default(true)
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  organizationId String       @map("organization_id")
-
-  gatewayTransactions GatewayTransaction[]
-
-  @@map("payment_gateways")
-}
-
-model GatewayTransaction {
-  id               String          @id @default(cuid())
-  amount           Float
-  currency         String
-  status           PaymentStatus
-  gatewayProvider  GatewayProvider
-  gatewayReference String?         @map("gateway_reference")
-  pixCode          String?         @map("pix_code")
-  qrCodeUrl        String?         @map("qr_code_url")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
-
-  paymentGateway   PaymentGateway @relation(fields: [paymentGatewayId], references: [id])
-  paymentGatewayId String         @map("payment_gateway_id")
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId String       @map("organization_id")
 
+  widgets Widget[]
+
+  @@map("products")
+}
+
+model Integration {
+  id                 String            @id @default(cuid())
+  provider           String
+  ciphertext         String // Chave de API criptografada
+  iv                 String // Vetor de inicialização para decriptação
+  apiKey             String
+  publicKey          String?
+  secretKey          String
+  webhookSecret      String?
+  status             IntegrationStatus @default(disconnected)
+  isActive           Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId     String
+  availableGateway   AvailableGateway  @relation(fields: [availableGatewayId], references: [id], onDelete: Cascade)
+  availableGatewayId String
+
+  gatewayTransactions GatewayTransaction[]
+  Payment             Payment[]
+  Widget              Widget[]
+
+  @@map("integrations")
+}
+
+model AvailableGateway {
+  id           String        @id @default(uuid())
+  name         String
+  slug         String        @unique
+  provider     String        @unique
+  description  String?
+  icon         String?
+  domain       String?
+  integrations Integration[]
+}
+
+model GatewayTransaction {
+  id               String        @id @default(cuid())
+  amount           Float
+  currency         String
+  status           PaymentStatus
+  gatewayProvider  String
+  gatewayReference String?       @map("gateway_reference")
+  pixCode          String?       @map("pix_code")
+  qrCodeUrl        String?       @map("qr_code_url")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  integrationId String      @map("integration_id")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String       @map("organization_id")
+
+  widget   Widget? @relation(fields: [widgetId], references: [id], onDelete: SetNull)
+  widgetId String? @map("widget_id")
+
   @@map("gateway_transactions")
+}
+
+model Widget {
+  id          String     @id @default(cuid())
+  name        String
+  amount      Float
+  description String?
+  type        WidgetType @default(EMBED)
+  widgetSlug  String?    @unique // Apenas para widgets do SHAREABLE
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  product        Product      @relation(fields: [productId], references: [id])
+  productId      String
+  integration    Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integrationId  String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  GatewayTransaction GatewayTransaction[] // Relacionado apenas se necessário
+
+  @@map("widgets")
+}
+
+enum WidgetType {
+  EMBED // Representa widgets embutidos (via iframe ou outra forma)
+  SHAREABLE // Representa widgets acessíveis por links
 }

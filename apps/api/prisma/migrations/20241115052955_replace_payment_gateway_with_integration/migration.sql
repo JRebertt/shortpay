@@ -2,6 +2,12 @@
 CREATE TYPE "SubscriptionType" AS ENUM ('FREE', 'BASIC', 'PRO');
 
 -- CreateEnum
+CREATE TYPE "IntegrationStatus" AS ENUM ('connected', 'disconnected');
+
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED');
+
+-- CreateEnum
 CREATE TYPE "TokenType" AS ENUM ('PASSWORD_RECOVER');
 
 -- CreateEnum
@@ -12,12 +18,6 @@ CREATE TYPE "Role" AS ENUM ('ADMIN', 'MEMBER', 'BILLING');
 
 -- CreateEnum
 CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'CANCELLED', 'EXPIRED', 'PENDING');
-
--- CreateEnum
-CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED');
-
--- CreateEnum
-CREATE TYPE "GatewayProvider" AS ENUM ('STRIPE', 'PAGARME', 'MERCADO_PAGO');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -30,7 +30,7 @@ CREATE TABLE "users" (
     "subscription" "SubscriptionType" NOT NULL DEFAULT 'FREE',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "preferredGateway" "GatewayProvider",
+    "preferredGateway" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -117,7 +117,7 @@ CREATE TABLE "subscriptions" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "trial_ends_at" TIMESTAMP(3),
-    "gatewayProvider" "GatewayProvider" NOT NULL,
+    "gatewayProvider" TEXT NOT NULL,
     "gateway_reference" TEXT,
 
     CONSTRAINT "subscriptions_pkey" PRIMARY KEY ("id")
@@ -130,7 +130,7 @@ CREATE TABLE "payments" (
     "amount" DOUBLE PRECISION NOT NULL,
     "currency" TEXT NOT NULL,
     "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
-    "paymentGateway" TEXT NOT NULL,
+    "integration_id" TEXT NOT NULL,
     "transactionId" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -138,18 +138,36 @@ CREATE TABLE "payments" (
 );
 
 -- CreateTable
-CREATE TABLE "payment_gateways" (
+CREATE TABLE "integrations" (
     "id" TEXT NOT NULL,
-    "provider" "GatewayProvider" NOT NULL,
+    "provider" TEXT NOT NULL,
+    "ciphertext" TEXT NOT NULL,
+    "iv" TEXT NOT NULL,
     "apiKey" TEXT NOT NULL,
+    "publicKey" TEXT,
     "secretKey" TEXT NOT NULL,
     "webhookSecret" TEXT,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-    "organization_id" TEXT NOT NULL,
+    "status" "IntegrationStatus" NOT NULL DEFAULT 'disconnected',
+    "isActive" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "availableGatewayId" TEXT NOT NULL,
 
-    CONSTRAINT "payment_gateways_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "integrations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AvailableGateway" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "description" TEXT,
+    "icon" TEXT,
+    "domain" TEXT,
+
+    CONSTRAINT "AvailableGateway_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -158,13 +176,13 @@ CREATE TABLE "gateway_transactions" (
     "amount" DOUBLE PRECISION NOT NULL,
     "currency" TEXT NOT NULL,
     "status" "PaymentStatus" NOT NULL,
-    "gatewayProvider" "GatewayProvider" NOT NULL,
+    "gatewayProvider" TEXT NOT NULL,
     "gateway_reference" TEXT,
     "pix_code" TEXT,
     "qr_code_url" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "payment_gateway_id" TEXT NOT NULL,
+    "integration_id" TEXT NOT NULL,
     "organization_id" TEXT NOT NULL,
 
     CONSTRAINT "gateway_transactions_pkey" PRIMARY KEY ("id")
@@ -193,6 +211,9 @@ CREATE UNIQUE INDEX "organizations_slug_key" ON "organizations"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "organizations_domain_key" ON "organizations"("domain");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AvailableGateway_slug_key" ON "AvailableGateway"("slug");
 
 -- AddForeignKey
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -228,10 +249,16 @@ ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_plan_id_fkey" FOREIGN 
 ALTER TABLE "payments" ADD CONSTRAINT "payments_subscription_id_fkey" FOREIGN KEY ("subscription_id") REFERENCES "subscriptions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payment_gateways" ADD CONSTRAINT "payment_gateways_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "payments" ADD CONSTRAINT "payments_integration_id_fkey" FOREIGN KEY ("integration_id") REFERENCES "integrations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "gateway_transactions" ADD CONSTRAINT "gateway_transactions_payment_gateway_id_fkey" FOREIGN KEY ("payment_gateway_id") REFERENCES "payment_gateways"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "integrations" ADD CONSTRAINT "integrations_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "integrations" ADD CONSTRAINT "integrations_availableGatewayId_fkey" FOREIGN KEY ("availableGatewayId") REFERENCES "AvailableGateway"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "gateway_transactions" ADD CONSTRAINT "gateway_transactions_integration_id_fkey" FOREIGN KEY ("integration_id") REFERENCES "integrations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "gateway_transactions" ADD CONSTRAINT "gateway_transactions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

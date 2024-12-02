@@ -20,6 +20,10 @@ import { getProfile } from './routes/auth/get-profile'
 import { requestPasswordRecover } from './routes/auth/request-password-recover'
 import { resetPassword } from './routes/auth/reset-password'
 import { getOrganizationBilling } from './routes/billing/get-organization-billing'
+import { createIntegration } from './routes/integrations/create-integration'
+import { generatePaymentLink } from './routes/integrations/generate-link'
+import { getAvailableGateways } from './routes/integrations/get-available-gateways'
+import { getOrganizationIntegrations } from './routes/integrations/get-integrations'
 import { acceptInvite } from './routes/invites/accept-invite'
 import { createInvite } from './routes/invites/create-invites'
 import { getInvite } from './routes/invites/get-invite'
@@ -37,8 +41,13 @@ import { getOrganizations } from './routes/orgs/get-organizations'
 import { shutdownOrganization } from './routes/orgs/shutdown-organization'
 import { transferOrganization } from './routes/orgs/transfer-organization'
 import { updateOrganization } from './routes/orgs/update-organization'
-import { createPayment } from './routes/payments/create-payment'
 import { getPlans } from './routes/payments/get-payments'
+import { createProduct } from './routes/products/create-product'
+import { getProduct } from './routes/products/get-product'
+import { getProducts } from './routes/products/get-products'
+import { createTransaction } from './routes/transaction/create-transation'
+import { createWidget } from './routes/widgets/create-widgets'
+import { getWidgetBySlug } from './routes/widgets/get-widget-by-slug'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -118,10 +127,27 @@ app.register(getPendingInvites)
 app.register(getOrganizationBilling)
 
 // Plans
-app.register(createPayment)
 app.register(getPlans)
 
-// Metrics
+// Gateways
+
+// Integrations
+app.register(createIntegration)
+app.register(generatePaymentLink)
+app.register(getOrganizationIntegrations)
+app.register(getAvailableGateways)
+
+// Products
+app.register(createProduct)
+app.register(getProduct)
+app.register(getProducts)
+
+// Widgets
+app.register(createWidget)
+app.register(getWidgetBySlug)
+
+// Transactions
+app.register(createTransaction)
 
 app.register(fastifyCors)
 
