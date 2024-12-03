@@ -17,7 +17,7 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
     NEXT_PUBLIC_API_URL: z.string().url(),
-    NEXT_PUBLIC_VERCEL_URL: z.string().url().optional(),
+    NEXT_PUBLIC_VERCEL_URL: z.string().optional(),
   },
   shared: {
     VERCEL_ENV: z.enum(['production', 'development', 'preview']).optional(),
