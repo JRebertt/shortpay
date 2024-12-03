@@ -1,4 +1,4 @@
-import { dayjs } from '@shortpay/dayjs'
+import dayjs from 'dayjs'
 import { CheckCircle, LogIn, LogOut } from 'lucide-react'
 import { cookies } from 'next/headers'
 import Link from 'next/link'

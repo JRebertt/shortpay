@@ -1,4 +1,4 @@
-import { dayjs } from '@shortpay/dayjs'
+import dayjs from 'dayjs'
 // import { RouterOutput } from '@nivo/trpc'
 import { Loader2, Video } from 'lucide-react'
 import Image from 'next/image'

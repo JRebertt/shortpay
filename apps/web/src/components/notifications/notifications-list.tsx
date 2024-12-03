@@ -1,4 +1,4 @@
-import { dayjs } from '@shortpay/dayjs'
+import dayjs from 'dayjs'
 import { Check, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'

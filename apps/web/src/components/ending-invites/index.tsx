@@ -1,7 +1,7 @@
 'use client'
 
-import { dayjs } from '@shortpay/dayjs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import { Check, UserPlus2, X } from 'lucide-react'
 import { useState } from 'react'
 
